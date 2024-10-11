@@ -206,16 +206,13 @@ def save_to_csv(data, filename):
 
 # Main function to guide the user through data creation using Streamlit
 def main():
-    st.title("Parking Mock Data Generator")
+    st.title("Parking Mock Data Generator 5000")
     st.write("Customize the parameters below to generate realistic mock parking data.")
 
     # Display logo
     logo_path = "./risetek.jpeg"
-    try:
-        logo_image = Image.open(logo_path)
-        st.image(logo_image, width=200)
-    except FileNotFoundError:
-        st.warning("Logo image not found.")
+    logo_image = Image.open(logo_path)
+    st.image(logo_image, width=200)
 
     # Number of days to simulate
     num_days = st.slider("Number of days to simulate:", min_value=1, max_value=30, value=1)
@@ -227,7 +224,7 @@ def main():
     st.info("Min Occupancy: The minimum occupancy rate for parking meters, indicating how occupied the meters should be.")
     occupancy_max = st.slider("Max Occupancy", min_value=50, max_value=100, value=95)
     st.info("Max Occupancy: The maximum occupancy rate for parking meters, indicating how occupied the meters should be.")
-    occupancy_rate_range = (occupancy_min / 100, occupancy_max / 100)  # Convert to 0-1 range
+    occupancy_rate_range = (occupancy_min, occupancy_max)
 
     # Non-functional meter percentage
     non_functional_percentage = st.slider("Non-Functional Meter Percentage (%):", min_value=2, max_value=10, value=5) / 100
@@ -261,23 +258,29 @@ def main():
     st.info("Cash: The percentage weight indicating how often cash is used as a payment method.")
     payment_weights = [parkmobile_weight, credit_card_weight, cash_weight]
 
-    # File inputs
+    # File input
+    st.write("Upload GeoJSON File (optional):")
     geojson_file = st.file_uploader("Upload GeoJSON File:", type=["geojson"])
+    
+    if geojson_file is None:
+        # Use the default GeoJSON file if none is uploaded
+        st.write("No file uploaded. Using default GeoJSON file.")
+        geojson_file_path = "chicago_parking_meters_2019-06-26.geojson"
+    else:
+        geojson_file_path = geojson_file
+
     output_filename = st.text_input("Output CSV Filename:", value="mock_parking_data.csv")
 
     # Generate data button
     if st.button("Generate Data"):
-        if geojson_file is None or not output_filename:
-            st.error("Please provide a GeoJSON file and output filename.")
+        if not output_filename:
+            st.error("Please provide an output filename.")
         else:
             st.write("Loading data from GeoJSON file...")
-            meters = load_data_from_geojson(geojson_file)
+            meters = load_data_from_geojson(geojson_file_path)
 
             st.write("Generating data...")
-            data = generate_parking_data(
-                meters, num_days, occupancy_rate_range, non_functional_percentage,
-                fine_probability, parking_rates, payment_weights
-            )
+            data = generate_parking_data(meters, num_days, occupancy_rate_range, non_functional_percentage, fine_probability, parking_rates, payment_weights)
 
             st.write(f"Saving data to {output_filename}...")
             save_to_csv(data, output_filename)
